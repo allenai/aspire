@@ -1,0 +1,17 @@
+{
+  "model_name": "cosentbert",
+  "base-pt-layer": "allenai/scibert_scivocab_uncased",
+  "train_suffix": "coppsent",
+  "train_size": 145078,
+  "dev_size": 5000,
+  "num_epochs": 2,
+  "batch_size": 48,
+  "update_rule": "adam",
+  "learning_rate": 2e-5,
+  "num_warmup_steps": 300,
+  "decay_lr_every": 1,
+  "lr_decay_method": "warmuplin",
+  "decay_lr_by": 0.95,
+  "es_check_every": 500,
+  "fine_tune": true
+}

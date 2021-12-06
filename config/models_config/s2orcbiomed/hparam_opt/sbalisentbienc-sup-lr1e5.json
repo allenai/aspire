@@ -1,0 +1,22 @@
+{
+  "model_name": "sbalisentbienc",
+  "base-pt-layer": "allenai/specter",
+  "score_aggregation": "l2lse",
+  "train_suffix": "cocitabsalign",
+  "abs_loss_prop": 0.0,
+  "sent_loss_prop": 0.0,
+  "sentsup_loss_prop": 1.0,
+  "train_size": 1276820,
+  "dev_size": 2000,
+  "num_epochs": 1,
+  "batch_size": 3,
+  "accumulated_batch_size": 30,
+  "update_rule": "adam",
+  "learning_rate": 1e-5,
+  "num_warmup_steps": 2000,
+  "decay_lr_every": 1,
+  "lr_decay_method": "warmuplin",
+  "decay_lr_by": 0.95,
+  "es_check_every": 10000,
+  "fine_tune": true
+}
