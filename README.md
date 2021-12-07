@@ -71,7 +71,9 @@ The pre-print can be accessed here: https://arxiv.org/abs/2111.08366
 
 - CSFCube is obtained from: [link](https://github.com/iesl/CSFCube). The dataset splits supplied alongside the original dataset are used as is.
 
-`src/pre_process/pre_proc_buildreps.py` and `src/pre_process/pp_gen_nearest.py`: Contain code to generate rankings over the evaluation datasets for consumption with a trained model. Most of the results reported in the paper are generated with the `CachingTrainedScoringModel` class in `pp_gen_nearest.py`.
+`src/pre_process/{pre_proc_buildreps.py/pp_gen_nearest.py}`: Contain code to generate rankings over the evaluation datasets for consumption with a trained model. Most of the results reported in the paper are generated with the `CachingTrainedScoringModel` class in `pp_gen_nearest.py`.
+
+`src/evaluation/ranking_eval.py`: Script for generating eval metrics.
 
 `src/learning/main_fsim.py`: The main script called from `bin/learning/run_main_fsim-ddp.sh` to initialize and train a model. The models consume json config files in `config/models_config/{<domain>}`. A mapping from the model names/classes/configs in the repository to the models reported in the paper is as follows:
 
@@ -93,16 +95,10 @@ The pre-print can be accessed here: https://arxiv.org/abs/2111.08366
 
 </div>
 
-`src/evaluation/ranking_eval.py`: Script for generating eval metrics.
 
 ### Acknowledgements
 This work relies on: (1) Data from the [Semantic Scholar Open Research Corpus](https://github.com/allenai/s2orc) (S2ORC) and the evaluation datasets RELISH (kindly shared by [Mariana Neves](https://mariananeves.github.io/)), TRECCOVID, SciDocs, and CSFCube linked above. (2) The pre-trained models of [SPECTER](https://github.com/allenai/specter). (3) The software packages: [GeomLoss](https://www.kernel-operations.io/geomloss/index.html) and [sentence-transformers](https://www.sbert.net/).
 
-### Todos
-
-1. Code usage instructions.
-2. Release trained model parameters.
-3. Release training data.
 
 ### Citation
 
@@ -118,3 +114,9 @@ Please cite the [ASPIRE paper](https://arxiv.org/pdf/2004.07180.pdf) as:
       primaryClass={cs.CL}
 }
 ```
+
+### Todos
+
+1. Code usage instructions.
+2. Release trained model parameters.
+3. Release training and evaluation data.
