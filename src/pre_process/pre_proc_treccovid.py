@@ -12,7 +12,6 @@ import pandas as pd
 import csv
 import spacy
 
-import pp_settings as pps
 import data_utils as du
 
 scispacy_model = spacy.load("en_core_sci_sm")

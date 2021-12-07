@@ -4,7 +4,6 @@ Process the RELISH dataset.
 import os
 import codecs
 import json
-import collections
 import csv
 import pandas as pd
 import random

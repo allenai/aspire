@@ -5,16 +5,11 @@ sure training is doing something meaningful, predict with trained model and run
 evaluation
 """
 import argparse, os, sys
-import re
 import logging
 import codecs, pprint, json
 import comet_ml as cml
-from transformers import AutoConfig
-
-import numpy as np
 import torch
-from torch.nn import functional
-from . import data_utils, batchers, trainer
+from . import batchers, trainer
 from .facetid_models import sentsim_models
 
 

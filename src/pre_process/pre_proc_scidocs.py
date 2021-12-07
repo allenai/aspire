@@ -6,7 +6,6 @@ import codecs
 import json
 import collections
 import csv
-import sys
 
 import pandas as pd
 import spacy

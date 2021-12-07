@@ -1,9 +1,7 @@
 """
 Explore the GORC corpus for corpora included and such.
 """
-import sys
 import os
-import random
 import ast
 import argparse
 import time
@@ -15,7 +13,6 @@ import pickle
 import codecs, json
 import csv
 import pandas as pd
-from nltk import tokenize
 import spacy
 
 import data_utils as du
