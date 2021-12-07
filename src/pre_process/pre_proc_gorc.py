@@ -720,14 +720,14 @@ def main():
                                     help='Directory with metadata, paper data and where '
                                          'outputs should be written.')
     filter_citcon_area.add_argument('--area', required=True,
-                                    choices=['compsci', 'biomed', 'matsci'])
+                                    choices=['compsci', 'biomed'])
     # Gather co-citation contexts.
     gather_cocit_cons = subparsers.add_parser('gather_area_cocits')
     gather_cocit_cons.add_argument('--root_path', required=True,
                                    help='Directory with metadata, paper data and where '
                                         'outputs should be written.')
     gather_cocit_cons.add_argument('--area', required=True,
-                                   choices=['compsci', 'biomed', 'matsci'])
+                                   choices=['compsci', 'biomed'])
     gather_cocitjsonl = subparsers.add_parser('gather_filtcocit_corpus')
     gather_cocitjsonl.add_argument('--root_path', required=True,
                                    help='Directory with pid2batch.')
@@ -774,8 +774,6 @@ def main():
             area = 'compsci'
         elif cl_args.dataset == 's2orcbiomed':
             area = 'biomed'
-        elif cl_args.dataset == 's2orcmatsci':
-            area = 'matsci'
         cocit_corpus_to_jsonl(meta_path=cl_args.in_meta_path, batch_data_path=cl_args.raw_data_path,
                               out_path=cl_args.out_path, area=area, root_path=cl_args.root_path)
 

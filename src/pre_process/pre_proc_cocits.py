@@ -103,8 +103,7 @@ def filter_cocitation_papers(run_path, dataset):
     """
     dataset2area = {
         's2orccompsci': 'compsci',
-        's2orcbiomed': 'biomed',
-        's2orcmatsci': 'matsci'
+        's2orcbiomed': 'biomed'
     }
     area = dataset2area[dataset]
     with open(os.path.join(run_path, f'cocitpids2contexts-{area}-absfilt.pickle'), 'rb') as fp:
@@ -188,8 +187,7 @@ def filter_cocitation_sentences(run_path, dataset):
     """
     dataset2area = {
         's2orccompsci': 'compsci',
-        's2orcbiomed': 'biomed',
-        's2orcmatsci': 'matsci'
+        's2orcbiomed': 'biomed'
     }
     area = dataset2area[dataset]
     with open(os.path.join(run_path, f'cocitpids2contexts-{area}-absfilt.pickle'), 'rb') as fp:
@@ -716,7 +714,7 @@ def main():
                                      help='Directory with absfilt cocitation pickle file. '
                                           'Also where outputs are written.')
     filter_cocit_papers.add_argument('--dataset', required=True,
-                                     choices=['s2orccompsci', 's2orcbiomed', 's2orcmatsci'],
+                                     choices=['s2orccompsci', 's2orcbiomed'],
                                      help='Files of area to process.')
     # Filter for sentence level models.
     filter_cocit_sents = subparsers.add_parser('filt_cocit_sents')
@@ -724,7 +722,7 @@ def main():
                                     help='Directory with absfilt cocitation pickle file. '
                                          'Also where outputs are written.')
     filter_cocit_sents.add_argument('--dataset', required=True,
-                                    choices=['s2orccompsci', 's2orcbiomed', 's2orcmatsci'],
+                                    choices=['s2orccompsci', 's2orcbiomed'],
                                     help='Files of area to process.')
     # Write examples for sentence level models.
     write_example_sents = subparsers.add_parser('write_examples')
@@ -737,12 +735,11 @@ def main():
     write_example_sents.add_argument('--model_name', choices=['cosentbert', 'specter', 'sbmpnet1B'],
                                      help='Model to use for getting alignments between abstracts.')
     write_example_sents.add_argument('--dataset', required=True,
-                                     choices=['s2orccompsci', 's2orcbiomed', 'treccovid', 'relish'],
+                                     choices=['s2orccompsci', 's2orcbiomed'],
                                      help='Files of area to process.')
     write_example_sents.add_argument('--experiment', required=True,
                                      choices=['cosentbert', 'ictsentbert', 'cospecter',
-                                              'labspecter', 'consentsimcse', 'sbalisentbienc', 'alisentbienc',
-                                              'alisentbienccf'],
+                                              'sbalisentbienc'],
                                      help='Model writing examples for.')
     cl_args = parser.parse_args()
     
