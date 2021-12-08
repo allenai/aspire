@@ -7,7 +7,6 @@ evaluation
 import argparse, os, sys
 import logging
 import codecs, pprint, json
-import comet_ml as cml
 import torch
 from . import batchers, trainer
 from .facetid_models import sentsim_models
@@ -31,10 +30,6 @@ def train_model(model_name, data_path, config_path, run_path, cl_args):
     with codecs.open(config_path, 'r', 'utf-8') as fp:
         all_hparams = json.load(fp)
     
-    cml_experiment = cml.Experiment(project_name='2021-ai2-scisim')
-    cml_experiment.log_parameters(all_hparams)
-    cml_experiment.set_name(run_name)
-    cml_experiment.add_tags([cl_args.dataset, cl_args.model_name])
     
     # Unpack hyperparameter settings.
     logging.info('All hyperparams:')
@@ -74,13 +69,11 @@ def train_model(model_name, data_path, config_path, run_path, cl_args):
         sys.exit(1)
     
     if model_name in ['cosentbert']:
-        model_trainer = trainer.BasicRankingTrainer(cml_exp=cml_experiment,
-                                                    model=model, batcher=batcher_cls, data_path=data_path, model_path=run_path,
+        model_trainer = trainer.BasicRankingTrainer(model=model, batcher=batcher_cls, data_path=data_path, model_path=run_path,
                                                     early_stop=True, dev_score='loss', train_hparams=all_hparams)
         model_trainer.save_function = trainer.sentbert_save_function
     elif model_name in ['ictsentbert']:
-        model_trainer = trainer.BasicRankingTrainer(cml_exp=cml_experiment,
-                                                    model=model, batcher=batcher_cls, data_path=data_path, model_path=run_path,
+        model_trainer = trainer.BasicRankingTrainer(model=model, batcher=batcher_cls, data_path=data_path, model_path=run_path,
                                                     early_stop=True, dev_score='loss', train_hparams=all_hparams)
         model_trainer.save_function = trainer.ictbert_save_function
     # Train and save the best model to model_path.

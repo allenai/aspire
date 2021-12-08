@@ -97,13 +97,12 @@ class GenericTrainer:
     # todo: Look into who this happens --low-pri.s
     save_function = generic_save_function
     
-    def __init__(self, cml_exp, model, batcher, model_path, train_hparams,
+    def __init__(self, model, batcher, model_path, train_hparams,
                  early_stop=True, verbose=True, dev_score='loss'):
         """
         A generic trainer class that defines the training procedure. Trainers
         for other models should subclass this and define the data that the models
         being trained consume.
-        :param cml_exp: comet_ml Experiment object.
         :param model: pytorch model.
         :param batcher: a model_utils.Batcher class.
         :param model_path: string; directory to which model should get saved.
@@ -130,7 +129,6 @@ class GenericTrainer:
         
         """
         # Book keeping
-        self.cml_experiment = cml_exp
         self.dev_score = dev_score
         self.verbose = verbose
         self.es_check_every = train_hparams['es_check_every']
@@ -234,114 +232,111 @@ class GenericTrainer:
             self.num_train, self.num_dev))
         logging.info('Training {:d} epochs, {:d} iterations'.
                      format(self.num_epochs, self.total_iters))
-        with self.cml_experiment.train():
-            for epoch, ex_fnames in zip(range(self.num_epochs), self.train_fnames):
-                # Initialize batcher. Shuffle one time before the start of every
-                # epoch.
-                epoch_batcher = self.batcher(ex_fnames=ex_fnames,
-                                             num_examples=self.num_train,
-                                             batch_size=self.batch_size)
-                # Get the next training batch.
-                iters_start = time.time()
-                for batch_doc_ids, batch_dict in epoch_batcher.next_batch():
-                    self.model.train()
-                    batch_start = time.time()
-                    # Impelemented according to:
-                    # https://discuss.pytorch.org/t/why-do-we-need-to-set-the-gradients-
-                    # manually-to-zero-in-pytorch/4903/20
-                    # With my implementation a final batch update may not happen sometimes but shrug.
-                    if self.accumulate_gradients:
-                        # Compute objective.
-                        ret_dict = self.model.forward(batch_dict=batch_dict)
-                        objective = self.compute_loss(loss_components=ret_dict)
-                        # Gradients wrt the parameters.
-                        objective.backward()
-                        if (self.iteration + 1) % self.update_params_every == 0:
-                            self.optimizer.step()
-                            self.optimizer.zero_grad()
-                    else:
-                        # Clear all gradient buffers.
-                        self.optimizer.zero_grad()
-                        # Compute objective.
-                        ret_dict = self.model.forward(batch_dict=batch_dict)
-                        objective = self.compute_loss(loss_components=ret_dict)
-                        # Gradients wrt the parameters.
-                        objective.backward()
-                        # Step in the direction of the gradient.
+        for epoch, ex_fnames in zip(range(self.num_epochs), self.train_fnames):
+            # Initialize batcher. Shuffle one time before the start of every
+            # epoch.
+            epoch_batcher = self.batcher(ex_fnames=ex_fnames,
+                                         num_examples=self.num_train,
+                                         batch_size=self.batch_size)
+            # Get the next training batch.
+            iters_start = time.time()
+            for batch_doc_ids, batch_dict in epoch_batcher.next_batch():
+                self.model.train()
+                batch_start = time.time()
+                # Impelemented according to:
+                # https://discuss.pytorch.org/t/why-do-we-need-to-set-the-gradients-
+                # manually-to-zero-in-pytorch/4903/20
+                # With my implementation a final batch update may not happen sometimes but shrug.
+                if self.accumulate_gradients:
+                    # Compute objective.
+                    ret_dict = self.model.forward(batch_dict=batch_dict)
+                    objective = self.compute_loss(loss_components=ret_dict)
+                    # Gradients wrt the parameters.
+                    objective.backward()
+                    if (self.iteration + 1) % self.update_params_every == 0:
                         self.optimizer.step()
-                    if self.iteration % self.log_every == 0:
-                        # Save every loss component separately.
-                        loss_str = []
-                        for key in ret_dict:
-                            if torch.cuda.is_available():
-                                loss_comp = float(ret_dict[key].data.cpu().numpy())
-                            else:
-                                loss_comp = float(ret_dict[key].data.numpy())
-                            self.loss_history[key].append(loss_comp)
-                            loss_str.append('{:s}: {:.4f}'.format(key, loss_comp))
-                        self.loss_checked_iters.append(self.iteration)
+                        self.optimizer.zero_grad()
+                else:
+                    # Clear all gradient buffers.
+                    self.optimizer.zero_grad()
+                    # Compute objective.
+                    ret_dict = self.model.forward(batch_dict=batch_dict)
+                    objective = self.compute_loss(loss_components=ret_dict)
+                    # Gradients wrt the parameters.
+                    objective.backward()
+                    # Step in the direction of the gradient.
+                    self.optimizer.step()
+                if self.iteration % self.log_every == 0:
+                    # Save every loss component separately.
+                    loss_str = []
+                    for key in ret_dict:
+                        if torch.cuda.is_available():
+                            loss_comp = float(ret_dict[key].data.cpu().numpy())
+                        else:
+                            loss_comp = float(ret_dict[key].data.numpy())
+                        self.loss_history[key].append(loss_comp)
+                        loss_str.append('{:s}: {:.4f}'.format(key, loss_comp))
+                    self.loss_checked_iters.append(self.iteration)
+                    if self.verbose:
+                        log_str = 'Epoch: {:d}; Iteration: {:d}/{:d}; '.format(epoch, self.iteration, self.total_iters)
+                        logging.info(log_str + '; '.join(loss_str))
+                elif self.verbose:
+                    logging.info('Epoch: {:d}; Iteration: {:d}/{:d}'.
+                                 format(epoch, self.iteration, self.total_iters))
+                # The decay_lr_every doesnt need to be a multiple of self.log_every
+                if self.iteration > 0 and self.iteration % self.decay_lr_every == 0:
+                    self.scheduler.step()
+                    # logging.info('Decayed learning rates: {}'.
+                    #              format([g['lr'] for g in self.optimizer.param_groups]))
+                batch_end = time.time()
+                total_time_per_batch += batch_end-batch_start
+                # Check every few iterations how you're doing on the dev set.
+                if self.iteration % self.es_check_every == 0 and self.iteration != 0 and self.early_stop:
+                    # Save the loss at this point too.
+                    for key in ret_dict:
+                        if torch.cuda.is_available():
+                            loss_comp = float(ret_dict[key].data.cpu().numpy())
+                        else:
+                            loss_comp = float(ret_dict[key].data.numpy())
+                        self.loss_history[key].append(loss_comp)
+                    self.loss_checked_iters.append(self.iteration)
+                    # Switch to eval model and check loss on dev set.
+                    self.model.eval()
+                    dev_start = time.time()
+                    # Returns the dev F1.
+                    if self.dev_score == 'f1':
+                        dev_score = pu.batched_dev_scores(
+                            model=self.model, batcher=self.batcher, batch_size=self.batch_size,
+                            ex_fnames=self.dev_fnames, num_examples=self.num_dev)
+                    elif self.dev_score == 'loss':
+                        dev_score = -1.0 * pu.batched_loss(
+                            model=self.model, batcher=self.batcher, batch_size=self.batch_size,
+                            ex_fnames=self.dev_fnames, num_examples=self.num_dev,
+                            loss_helper=self.loss_function_cal)
+                    dev_end = time.time()
+                    total_time_per_dev += dev_end-dev_start
+                    self.dev_score_history.append(dev_score)
+                    self.dev_checked_iters.append(self.iteration)
+                    if dev_score > best_dev_score:
+                        best_dev_score = dev_score
+                        # Deep copy so you're not just getting a reference.
+                        best_params = copy.deepcopy(self.model.state_dict())
+                        best_epoch = epoch
+                        best_iter = self.iteration
+                        everything = (epoch, self.iteration, self.total_iters, dev_score)
                         if self.verbose:
-                            log_str = 'Epoch: {:d}; Iteration: {:d}/{:d}; '.format(epoch, self.iteration, self.total_iters)
-                            logging.info(log_str + '; '.join(loss_str))
-                    elif self.verbose:
-                        logging.info('Epoch: {:d}; Iteration: {:d}/{:d}'.
-                                     format(epoch, self.iteration, self.total_iters))
-                    # The decay_lr_every doesnt need to be a multiple of self.log_every
-                    if self.iteration > 0 and self.iteration % self.decay_lr_every == 0:
-                        self.scheduler.step()
-                        # logging.info('Decayed learning rates: {}'.
-                        #              format([g['lr'] for g in self.optimizer.param_groups]))
-                    batch_end = time.time()
-                    total_time_per_batch += batch_end-batch_start
-                    # Check every few iterations how you're doing on the dev set.
-                    with self.cml_experiment.validate():
-                        if self.iteration % self.es_check_every == 0 and self.iteration != 0 and self.early_stop:
-                            # Save the loss at this point too.
-                            for key in ret_dict:
-                                if torch.cuda.is_available():
-                                    loss_comp = float(ret_dict[key].data.cpu().numpy())
-                                else:
-                                    loss_comp = float(ret_dict[key].data.numpy())
-                                self.loss_history[key].append(loss_comp)
-                            self.loss_checked_iters.append(self.iteration)
-                            # Switch to eval model and check loss on dev set.
-                            self.model.eval()
-                            dev_start = time.time()
-                            # Returns the dev F1.
-                            if self.dev_score == 'f1':
-                                dev_score = pu.batched_dev_scores(
-                                    model=self.model, batcher=self.batcher, batch_size=self.batch_size,
-                                    ex_fnames=self.dev_fnames, num_examples=self.num_dev)
-                            elif self.dev_score == 'loss':
-                                dev_score = -1.0 * pu.batched_loss(
-                                    model=self.model, batcher=self.batcher, batch_size=self.batch_size,
-                                    ex_fnames=self.dev_fnames, num_examples=self.num_dev,
-                                    loss_helper=self.loss_function_cal)
-                            self.cml_experiment.log_metric(self.dev_score, dev_score, step=self.iteration)
-                            dev_end = time.time()
-                            total_time_per_dev += dev_end-dev_start
-                            self.dev_score_history.append(dev_score)
-                            self.dev_checked_iters.append(self.iteration)
-                            if dev_score > best_dev_score:
-                                best_dev_score = dev_score
-                                # Deep copy so you're not just getting a reference.
-                                best_params = copy.deepcopy(self.model.state_dict())
-                                best_epoch = epoch
-                                best_iter = self.iteration
-                                everything = (epoch, self.iteration, self.total_iters, dev_score)
-                                if self.verbose:
-                                    logging.info('Current best model; Epoch {:d}; '
-                                                 'Iteration {:d}/{:d}; Dev score: {:.4f}'.format(*everything))
-                                self.save_function(model=self.model, save_path=self.model_path, model_suffix='cur_best')
-                            else:
-                                everything = (epoch, self.iteration, self.total_iters, dev_score)
-                                if self.verbose:
-                                    logging.info('Epoch {:d}; Iteration {:d}/{:d}; Dev score: {:.4f}'.format(*everything))
-                    self.iteration += 1
-                epoch_time = time.time()-iters_start
-                logging.info('Epoch {:d} time: {:.4f}s'.format(epoch, epoch_time))
-                logging.info('\n')
-            
+                            logging.info('Current best model; Epoch {:d}; '
+                                         'Iteration {:d}/{:d}; Dev score: {:.4f}'.format(*everything))
+                        self.save_function(model=self.model, save_path=self.model_path, model_suffix='cur_best')
+                    else:
+                        everything = (epoch, self.iteration, self.total_iters, dev_score)
+                        if self.verbose:
+                            logging.info('Epoch {:d}; Iteration {:d}/{:d}; Dev score: {:.4f}'.format(*everything))
+                self.iteration += 1
+            epoch_time = time.time()-iters_start
+            logging.info('Epoch {:d} time: {:.4f}s'.format(epoch, epoch_time))
+            logging.info('\n')
+        
         # Say how long things took.
         train_time = time.time()-train_start
         logging.info('Training time: {:.4f}s'.format(train_time))
@@ -424,7 +419,7 @@ class BasicTrainer(GenericTrainer):
 
 
 class BasicRankingTrainer(GenericTrainer):
-    def __init__(self, cml_exp, model, batcher, model_path, data_path,
+    def __init__(self, model, batcher, model_path, data_path,
                  train_hparams, early_stop=True, verbose=True, dev_score='loss'):
         """
         Trainer for any model returning a ranking loss. Uses everything from the
@@ -432,7 +427,7 @@ class BasicRankingTrainer(GenericTrainer):
         should be put together.
         :param data_path: string; directory with all the int mapped data.
         """
-        GenericTrainer.__init__(self, cml_exp=cml_exp, model=model, batcher=batcher, model_path=model_path,
+        GenericTrainer.__init__(self, model=model, batcher=batcher, model_path=model_path,
                                 train_hparams=train_hparams, early_stop=early_stop, verbose=verbose,
                                 dev_score=dev_score)
         # Expect the presence of a directory with as many shuffled copies of the
@@ -483,13 +478,12 @@ class GenericTrainerDDP:
     # todo: Look into who this happens --low-pri.s
     save_function = generic_save_function_ddp
     
-    def __init__(self, cml_exp, logger, process_rank, num_gpus, model, batcher, model_path, train_hparams,
+    def __init__(self, logger, process_rank, num_gpus, model, batcher, model_path, train_hparams,
                  early_stop=True, verbose=True, dev_score='loss'):
         """
         A generic trainer class that defines the training procedure. Trainers
         for other models should subclass this and define the data that the models
         being trained consume.
-        :param cml_exp: comet_ml Experiment object.
         :param logger: a logger to write logs with.
         :param process_rank: int; which process this is.
         :param num_gpus: int; how many gpus are being used to train.
@@ -521,7 +515,6 @@ class GenericTrainerDDP:
         # Book keeping
         self.process_rank = process_rank
         self.logger = logger
-        self.cml_experiment = cml_exp
         self.dev_score = dev_score
         self.verbose = verbose
         self.es_check_every = train_hparams['es_check_every']//num_gpus
@@ -600,111 +593,108 @@ class GenericTrainerDDP:
                         f'num_train: {self.num_train}; num_dev: {self.num_dev}')
         conditional_log(self.logger, self.process_rank,
                         f'Training {self.num_epochs} epochs, {self.total_iters} iterations')
-        with self.cml_experiment.train():
-            for epoch, ex_fnames in zip(range(self.num_epochs), self.train_fnames):
-                # Initialize batcher. Shuffle one time before the start of every
-                # epoch.
-                epoch_batcher = self.batcher(ex_fnames=ex_fnames,
-                                             num_examples=self.num_train,
-                                             batch_size=self.batch_size)
-                # Get the next training batch.
-                iters_start = time.time()
-                for batch_doc_ids, batch_dict in epoch_batcher.next_batch():
-                    self.model.train()
-                    batch_start = time.time()
-                    # Impelemented according to:
-                    # https://discuss.pytorch.org/t/why-do-we-need-to-set-the-gradients-
-                    # manually-to-zero-in-pytorch/4903/20
-                    # With my implementation a final batch update may not happen sometimes but shrug.
-                    if self.accumulate_gradients:
-                        # Compute objective.
-                        ret_dict = self.model.forward(batch_dict=batch_dict)
-                        objective = self.compute_loss(loss_components=ret_dict)
-                        # Gradients wrt the parameters.
-                        objective.backward()
-                        if (self.iteration + 1) % self.update_params_every == 0:
-                            self.optimizer.step()
-                            self.optimizer.zero_grad()
-                    else:
-                        # Clear all gradient buffers.
-                        self.optimizer.zero_grad()
-                        # Compute objective.
-                        ret_dict = self.model.forward(batch_dict=batch_dict)
-                        objective = self.compute_loss(loss_components=ret_dict)
-                        # Gradients wrt the parameters.
-                        objective.backward()
-                        # Step in the direction of the gradient.
+        for epoch, ex_fnames in zip(range(self.num_epochs), self.train_fnames):
+            # Initialize batcher. Shuffle one time before the start of every
+            # epoch.
+            epoch_batcher = self.batcher(ex_fnames=ex_fnames,
+                                         num_examples=self.num_train,
+                                         batch_size=self.batch_size)
+            # Get the next training batch.
+            iters_start = time.time()
+            for batch_doc_ids, batch_dict in epoch_batcher.next_batch():
+                self.model.train()
+                batch_start = time.time()
+                # Impelemented according to:
+                # https://discuss.pytorch.org/t/why-do-we-need-to-set-the-gradients-
+                # manually-to-zero-in-pytorch/4903/20
+                # With my implementation a final batch update may not happen sometimes but shrug.
+                if self.accumulate_gradients:
+                    # Compute objective.
+                    ret_dict = self.model.forward(batch_dict=batch_dict)
+                    objective = self.compute_loss(loss_components=ret_dict)
+                    # Gradients wrt the parameters.
+                    objective.backward()
+                    if (self.iteration + 1) % self.update_params_every == 0:
                         self.optimizer.step()
-                    if self.iteration % self.log_every == 0:
-                        # Save every loss component separately.
-                        loss_str = []
-                        for key in ret_dict:
-                            if torch.cuda.is_available():
-                                loss_comp = float(ret_dict[key].data.cpu().numpy())
-                            else:
-                                loss_comp = float(ret_dict[key].data.numpy())
-                            self.loss_history[key].append(loss_comp)
-                            loss_str.append('{:s}: {:.4f}'.format(key, loss_comp))
-                        self.loss_checked_iters.append(self.iteration)
+                        self.optimizer.zero_grad()
+                else:
+                    # Clear all gradient buffers.
+                    self.optimizer.zero_grad()
+                    # Compute objective.
+                    ret_dict = self.model.forward(batch_dict=batch_dict)
+                    objective = self.compute_loss(loss_components=ret_dict)
+                    # Gradients wrt the parameters.
+                    objective.backward()
+                    # Step in the direction of the gradient.
+                    self.optimizer.step()
+                if self.iteration % self.log_every == 0:
+                    # Save every loss component separately.
+                    loss_str = []
+                    for key in ret_dict:
+                        if torch.cuda.is_available():
+                            loss_comp = float(ret_dict[key].data.cpu().numpy())
+                        else:
+                            loss_comp = float(ret_dict[key].data.numpy())
+                        self.loss_history[key].append(loss_comp)
+                        loss_str.append('{:s}: {:.4f}'.format(key, loss_comp))
+                    self.loss_checked_iters.append(self.iteration)
+                    if self.verbose:
+                        log_str = 'Epoch: {:d}; Iteration: {:d}/{:d}; '.format(epoch, self.iteration, self.total_iters)
+                        conditional_log(self.logger, self.process_rank, log_str + '; '.join(loss_str))
+                elif self.verbose:
+                    conditional_log(self.logger, self.process_rank,
+                                    f'Epoch: {epoch}; Iteration: {self.iteration}/{self.total_iters}')
+                # The decay_lr_every doesnt need to be a multiple of self.log_every
+                if self.iteration > 0 and self.iteration % self.decay_lr_every == 0:
+                    self.scheduler.step()
+                batch_end = time.time()
+                total_time_per_batch += batch_end-batch_start
+                # Check every few iterations how you're doing on the dev set.
+                if self.iteration % self.es_check_every == 0 and self.iteration != 0 and self.early_stop\
+                        and self.process_rank == 0:
+                    # Save the loss at this point too.
+                    for key in ret_dict:
+                        if torch.cuda.is_available():
+                            loss_comp = float(ret_dict[key].data.cpu().numpy())
+                        else:
+                            loss_comp = float(ret_dict[key].data.numpy())
+                        self.loss_history[key].append(loss_comp)
+                    self.loss_checked_iters.append(self.iteration)
+                    # Switch to eval model and check loss on dev set.
+                    self.model.eval()
+                    dev_start = time.time()
+                    # Using the module as it is for eval:
+                    # https://discuss.pytorch.org/t/distributeddataparallel-
+                    # barrier-doesnt-work-as-expected-during-evaluation/99867/11
+                    dev_score = -1.0 * pu.batched_loss_ddp(
+                        model=self.model.module, batcher=self.batcher, batch_size=self.batch_size,
+                        ex_fnames=self.dev_fnames, num_examples=self.num_dev,
+                        loss_helper=self.loss_function_cal, logger=self.logger)
+                    dev_end = time.time()
+                    total_time_per_dev += dev_end-dev_start
+                    self.dev_score_history.append(dev_score)
+                    self.dev_checked_iters.append(self.iteration)
+                    if dev_score > best_dev_score:
+                        best_dev_score = dev_score
+                        # Deep copy so you're not just getting a reference.
+                        best_params = copy.deepcopy(self.model.state_dict())
+                        best_epoch = epoch
+                        best_iter = self.iteration
+                        everything = (epoch, self.iteration, self.total_iters, dev_score)
                         if self.verbose:
-                            log_str = 'Epoch: {:d}; Iteration: {:d}/{:d}; '.format(epoch, self.iteration, self.total_iters)
-                            conditional_log(self.logger, self.process_rank, log_str + '; '.join(loss_str))
-                    elif self.verbose:
-                        conditional_log(self.logger, self.process_rank,
-                                        f'Epoch: {epoch}; Iteration: {self.iteration}/{self.total_iters}')
-                    # The decay_lr_every doesnt need to be a multiple of self.log_every
-                    if self.iteration > 0 and self.iteration % self.decay_lr_every == 0:
-                        self.scheduler.step()
-                    batch_end = time.time()
-                    total_time_per_batch += batch_end-batch_start
-                    # Check every few iterations how you're doing on the dev set.
-                    if self.iteration % self.es_check_every == 0 and self.iteration != 0 and self.early_stop\
-                            and self.process_rank == 0:
-                        with self.cml_experiment.validate():
-                            # Save the loss at this point too.
-                            for key in ret_dict:
-                                if torch.cuda.is_available():
-                                    loss_comp = float(ret_dict[key].data.cpu().numpy())
-                                else:
-                                    loss_comp = float(ret_dict[key].data.numpy())
-                                self.loss_history[key].append(loss_comp)
-                            self.loss_checked_iters.append(self.iteration)
-                            # Switch to eval model and check loss on dev set.
-                            self.model.eval()
-                            dev_start = time.time()
-                            # Using the module as it is for eval:
-                            # https://discuss.pytorch.org/t/distributeddataparallel-
-                            # barrier-doesnt-work-as-expected-during-evaluation/99867/11
-                            dev_score = -1.0 * pu.batched_loss_ddp(
-                                model=self.model.module, batcher=self.batcher, batch_size=self.batch_size,
-                                ex_fnames=self.dev_fnames, num_examples=self.num_dev,
-                                loss_helper=self.loss_function_cal, logger=self.logger)
-                            self.cml_experiment.log_metric(self.dev_score, dev_score, step=self.iteration)
-                            dev_end = time.time()
-                            total_time_per_dev += dev_end-dev_start
-                            self.dev_score_history.append(dev_score)
-                            self.dev_checked_iters.append(self.iteration)
-                            if dev_score > best_dev_score:
-                                best_dev_score = dev_score
-                                # Deep copy so you're not just getting a reference.
-                                best_params = copy.deepcopy(self.model.state_dict())
-                                best_epoch = epoch
-                                best_iter = self.iteration
-                                everything = (epoch, self.iteration, self.total_iters, dev_score)
-                                if self.verbose:
-                                    self.logger.info('Current best model; Epoch {:d}; '
-                                                     'Iteration {:d}/{:d}; Dev score: {:.4f}'.format(*everything))
-                                self.save_function(model=self.model, save_path=self.model_path, model_suffix='cur_best')
-                            else:
-                                everything = (epoch, self.iteration, self.total_iters, dev_score)
-                                if self.verbose:
-                                    self.logger.info('Epoch {:d}; Iteration {:d}/{:d}; Dev score: {:.4f}'
-                                                     .format(*everything))
-                    dist.barrier()
-                    self.iteration += 1
-                epoch_time = time.time()-iters_start
-                conditional_log(self.logger, self.process_rank, 'Epoch {:d} time: {:.4f}s'.format(epoch, epoch_time))
-                conditional_log(self.logger, self.process_rank, '\n')
+                            self.logger.info('Current best model; Epoch {:d}; '
+                                             'Iteration {:d}/{:d}; Dev score: {:.4f}'.format(*everything))
+                        self.save_function(model=self.model, save_path=self.model_path, model_suffix='cur_best')
+                    else:
+                        everything = (epoch, self.iteration, self.total_iters, dev_score)
+                        if self.verbose:
+                            self.logger.info('Epoch {:d}; Iteration {:d}/{:d}; Dev score: {:.4f}'
+                                             .format(*everything))
+                dist.barrier()
+                self.iteration += 1
+            epoch_time = time.time()-iters_start
+            conditional_log(self.logger, self.process_rank, 'Epoch {:d} time: {:.4f}s'.format(epoch, epoch_time))
+            conditional_log(self.logger, self.process_rank, '\n')
         
         # Say how long things took.
         train_time = time.time()-train_start
@@ -741,7 +731,7 @@ class GenericTrainerDDP:
 
 
 class BasicRankingTrainerDDP(GenericTrainerDDP):
-    def __init__(self, cml_exp, logger, process_rank, num_gpus, model, batcher, model_path, data_path,
+    def __init__(self, logger, process_rank, num_gpus, model, batcher, model_path, data_path,
                  train_hparams, early_stop=True, verbose=True, dev_score='loss'):
         """
         Trainer for any model returning a ranking loss. Uses everything from the
@@ -749,7 +739,7 @@ class BasicRankingTrainerDDP(GenericTrainerDDP):
         should be put together.
         :param data_path: string; directory with all the int mapped data.
         """
-        GenericTrainerDDP.__init__(self, cml_exp=cml_exp, logger=logger, process_rank=process_rank, num_gpus=num_gpus,
+        GenericTrainerDDP.__init__(self, logger=logger, process_rank=process_rank, num_gpus=num_gpus,
                                    model=model, batcher=batcher, model_path=model_path,
                                    train_hparams=train_hparams, early_stop=early_stop, verbose=verbose,
                                    dev_score=dev_score)

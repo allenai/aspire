@@ -6,7 +6,6 @@ sure training is doing something meaningful.
 import argparse, os, sys
 import codecs, pprint, json
 import datetime
-import comet_ml as cml
 import logging
 import torch
 import torch.multiprocessing as torch_mp
@@ -75,12 +74,6 @@ def ddp_train_model(process_rank, args):
     
     # Setup logging and experiment tracking.
     if process_rank == 0:
-        cml_experiment = cml.Experiment(project_name='2021-ai2-scisim', display_summary_level=0,
-                                        auto_output_logging="simple")
-        cml_experiment.log_parameters(all_hparams)
-        cml_experiment.set_name(run_name)
-        # Save the name of the screen session the experiment is running in.
-        cml_experiment.add_tags([cl_args.dataset, cl_args.model_name, os.environ['STY']])
         # Print the called script and its args to the log.
         logger = get_logger()
         print(' '.join(sys.argv))
@@ -93,7 +86,6 @@ def ddp_train_model(process_rank, args):
             json.dump(run_info, fp)
     else:
         logger = None
-        cml_experiment = cml.Experiment(disabled=True)
         
     # Initialize model.
     if model_name in {'cospecter'}:
@@ -139,7 +131,7 @@ def ddp_train_model(process_rank, args):
     if model_name in ['cospecter', 'miswordbienc',
                       'miswordpolyenc', 'sbalisentbienc']:
         model_trainer = trainer.BasicRankingTrainerDDP(
-            cml_exp=cml_experiment, logger=logger, process_rank=process_rank, num_gpus=cl_args.num_gpus,
+            logger=logger, process_rank=process_rank, num_gpus=cl_args.num_gpus,
             model=model, batcher=batcher_cls, data_path=data_path, model_path=run_path,
             early_stop=True, dev_score='loss', train_hparams=all_hparams)
         model_trainer.save_function = trainer.generic_save_function_ddp
@@ -165,12 +157,6 @@ def train_model(model_name, data_path, config_path, run_path, cl_args):
     # Load label maps and configs.
     with codecs.open(config_path, 'r', 'utf-8') as fp:
         all_hparams = json.load(fp)
-    
-    cml_experiment = cml.Experiment(project_name='2021-ai2-scisim', display_summary_level=0)
-    cml_experiment.log_parameters(all_hparams)
-    cml_experiment.set_name(run_name)
-    # Save the name of the screen session the experiment is running in.
-    cml_experiment.add_tags([cl_args.dataset, cl_args.model_name, os.environ['STY']])
     
     # Unpack hyperparameter settings.
     logging.info('All hyperparams:')
@@ -224,8 +210,7 @@ def train_model(model_name, data_path, config_path, run_path, cl_args):
     
     if model_name in ['cospecter', 'miswordbienc',
                       'sbalisentbienc']:
-        model_trainer = trainer.BasicRankingTrainer(cml_exp=cml_experiment,
-                                                    model=model, batcher=batcher_cls, data_path=data_path, model_path=run_path,
+        model_trainer = trainer.BasicRankingTrainer(model=model, batcher=batcher_cls, data_path=data_path, model_path=run_path,
                                                     early_stop=True, dev_score='loss', train_hparams=all_hparams)
         model_trainer.save_function = trainer.generic_save_function
     # Train and save the best model to model_path.
