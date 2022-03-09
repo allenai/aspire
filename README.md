@@ -102,7 +102,7 @@ The pre-print can be accessed here: https://arxiv.org/abs/2111.08366
 
 Models described in the paper will be released as Hugging Face models.
 
-`cosentbert`: [`https://huggingface.co/allenai/aspire-sentence-embedder`](https://huggingface.co/allenai/aspire-sentence-embedder)
+`cosentbert`: [`allenai/aspire-sentence-embedder`](https://huggingface.co/allenai/aspire-sentence-embedder)
 
 `SPECTER-CoCite`: TODO
 
