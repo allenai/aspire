@@ -96,6 +96,21 @@ The pre-print can be accessed here: https://arxiv.org/abs/2111.08366
 </div>
 
 
+### Artifacts 
+
+#### Models
+
+Models described in the paper will be released as Hugging Face models.
+
+`cosentbert`: [`https://huggingface.co/allenai/aspire-sentence-embedder`](https://huggingface.co/allenai/aspire-sentence-embedder)
+
+`SPECTER-CoCite`: TODO
+
+`tsAspire`: TODO
+
+`otAspire`: TODO
+
+
 ### Acknowledgements
 This work relies on: (1) Data from the [Semantic Scholar Open Research Corpus](https://github.com/allenai/s2orc) (S2ORC) and the evaluation datasets RELISH (kindly shared by [Mariana Neves](https://mariananeves.github.io/)), TRECCOVID, SciDocs, and CSFCube linked above. (2) The pre-trained models of [SPECTER](https://github.com/allenai/specter). (3) The software packages: [GeomLoss](https://www.kernel-operations.io/geomloss/index.html) and [sentence-transformers](https://www.sbert.net/).
 
@@ -115,8 +130,9 @@ Please cite the [ASPIRE paper](https://arxiv.org/pdf/2004.07180.pdf) as:
 }
 ```
 
+
 ### Todos
 
-1. Code usage instructions.
-2. Release trained model parameters.
+1. Training code usage instructions.
+2. Release trained model parameters. (in-progress)
 3. Release training and evaluation data.
