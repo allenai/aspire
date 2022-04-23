@@ -1,7 +1,7 @@
 """
 Script to demo example usage of the Aspire Bi-encoder with linear mixing across
-BERT layers, i.e the models: aspire-biencoder-biomed-scib-all,
-aspire-biencoder-biomed-spec-all, and aspire-biencoder-compsci-spec-all.
+BERT layers, i.e the models: aspire-biencoder-biomed-scib-full,
+aspire-biencoder-biomed-spec-full, and aspire-biencoder-compsci-spec-full.
 
 *-all models released as zip folders alongside:
 https://huggingface.co/allenai/aspire-biencoder-biomed-scib
