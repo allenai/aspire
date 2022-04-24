@@ -13,18 +13,15 @@ https://huggingface.co/allenai/aspire-contextualsentence-multim-compsci
 Requirements:
 - transformers version: 4.5.1
 - torch version: 1.8.1
-- geom
+- geomloss version: 0.2.4
+
+Code here is used in the demo jupyter notebook: demo-contextualsentence-multim.ipynb
 """
-import math
-import random
-from collections import namedtuple
 import numpy as np
 import torch
 from torch import nn as nn
 from torch.autograd import Variable
 from torch.nn import functional
-import collections
-import sys
 import geomloss
 from transformers import AutoModel, AutoTokenizer
 
@@ -109,6 +106,8 @@ class AspireConSent(nn.Module):
         return doc_cls_reps, sent_reps
 
 
+# Define the class for the distance function.
+# Copied over from src.learning.facetid_models.pair_distances
 class AllPairMaskedWasserstein:
     def __init__(self, model_hparams):
         self.geoml_blur = model_hparams.get('geoml_blur', 0.05)
@@ -190,6 +189,7 @@ class AllPairMaskedWasserstein:
             return wasserstein_dists
 
 
+# Both below functions copied over from src.learning.batchers
 # Function to prepare tokenize, pad inputs, while maintaining token indices
 # for getting contextual sentence eocndings.
 def prepare_bert_sentences(batch_doc_sents, tokenizer):
