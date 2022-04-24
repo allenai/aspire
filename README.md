@@ -49,6 +49,8 @@ Models described in the paper are released as Hugging Face models:
 
 #### Model Usage Instructions <a name="modelusage"></a>
 
+##### `tsAspire`
+
 The `tsAspire` multi-vector model trained for single matches across documents can be used via the `transformers` library and some additional code to compute contextual sentence vectors as:
 
 ```
@@ -82,9 +84,13 @@ clsreps, contextual_sent_reps = aspire_mv_model.forward(bert_batch=bert_batch,
                                                         sent_tok_idxs=sent_token_idxs)
 ```
 
+##### `otAspire`
+
 The `otAspire` multi-vector model trained for _multiple_ matches across documents can be used via the `transformers` library, some additional code to compute contextual sentence vectors and to make multiple matches using optimal transport. 
 
 View example usage and sample document alignments here: [`examples/demo-contextualsentence-multim.ipynb`](https://github.com/allenai/aspire/blob/main/examples/demo-contextualsentence-multim.ipynb)
+
+##### `SPECTER-CoCite`
 
 The `SPECTER-CoCite` bi-encoder model can be used via the `transformers` library as:
 
