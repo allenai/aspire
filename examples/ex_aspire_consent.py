@@ -210,8 +210,7 @@ def prepare_abstracts(batch_abs, pt_lm_tokenizer):
 
 
 # Initialize the tokenizer and model.
-hf_model_name = '/mnt/nfs/work1/mccallum/smysore/2021-ai2-scisim/model_runs/hf_hub_models/' \
-                'aspire-contextualsentence-singlem-biomed'
+hf_model_name = 'allenai/aspire-contextualsentence-singlem-compsci'
 aspire_tok = AutoTokenizer.from_pretrained(hf_model_name)
 aspire_mv_model = AspireConSent(hf_model_name)
 
