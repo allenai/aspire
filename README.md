@@ -104,11 +104,11 @@ Models described in the paper will be released as Hugging Face models.
 
 `cosentbert`: [`allenai/aspire-sentence-embedder`](https://huggingface.co/allenai/aspire-sentence-embedder)
 
-`SPECTER-CoCite`: TODO
+`SPECTER-CoCite`: [`allenai/aspire-biencoder-compsci-spec`](https://huggingface.co/allenai/aspire-biencoder-compsci-spec), [`allenai/aspire-biencoder-biomed-scib`](https://huggingface.co/allenai/aspire-biencoder-biomed-scib), [`allenai/aspire-biencoder-biomed-spec`](https://huggingface.co/allenai/aspire-biencoder-biomed-spec)
 
-`tsAspire`: TODO
+`tsAspire`: `allenai/aspire-contextualsentence-singlem-compsci`](https://huggingface.co/allenai/aspire-contextualsentence-singlem-compsci), [`allenai/aspire-contextualsentence-singlem-biomed`](https://huggingface.co/allenai/aspire-contextualsentence-singlem-biomed)
 
-`otAspire`: TODO
+`otAspire`: `allenai/aspire-contextualsentence-multim-compsci`](https://huggingface.co/allenai/aspire-contextualsentence-multim-compsci), [`allenai/aspire-contextualsentence-multim-biomed`](https://huggingface.co/allenai/aspire-contextualsentence-multim-biomed)
 
 #### Evaluation Datasets
 
@@ -137,6 +137,6 @@ Please cite the [ASPIRE paper](https://arxiv.org/pdf/2004.07180.pdf) as:
 
 ### Todos
 
-1. Training code usage instructions.
-2. Release trained model parameters. (in-progress)
-3. Release training and evaluation data. (in-progress)
+1. Release trained model parameters. (in-progress)
+2. Release training training data.
+3. Training code usage instructions.
