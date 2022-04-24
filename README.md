@@ -53,7 +53,7 @@ Models described in the paper are released as Hugging Face models:
 
 The `tsAspire` multi-vector model trained for single matches across documents can be used via the `transformers` library and some additional code to compute contextual sentence vectors as:
 
-```
+```python
 from transformers import AutoTokenizer
 from examples.ex_aspire_consent import AspireConSent, prepare_abstracts
 
@@ -95,7 +95,7 @@ View example usage and sample document matches here: [`examples/demo-contextuals
 
 The `SPECTER-CoCite` bi-encoder model can be used via the `transformers` library as:
 
-```
+```python
 from transformers import AutoModel, AutoTokenizer
 aspire_bienc = AutoModel.from_pretrained('allenai/aspire-biencoder-compsci-spec')
 aspire_tok = AutoTokenizer.from_pretrained('allenai/aspire-biencoder-compsci-spec')
@@ -109,14 +109,14 @@ clsrep = result.last_hidden_state[:, 0, :]
 
 However, note that the Hugging Face models don't have a set of additional scalar-mix parameters to compute a learned weighted sum of the representations from different layers of the transformer encoder. These are used in our paper and are important for performance in some datasets. Obtain the model as follows:
 
-```
+```bash
 wget -O aspire-biencoder-compsci-spec-full.zip <LINK>
 unzip aspire-biencoder-compsci-spec-full.zip
 ```
 
 Now it may be used as:
 
-```
+```python
 import os, json, codecs, torch
 from transformers import AutoTokenizer
 from examples.ex_aspire_bienc import AspireBiEnc
