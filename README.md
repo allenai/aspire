@@ -13,6 +13,8 @@ The pre-print can be accessed here: https://arxiv.org/abs/2111.08366
 1. [Artifacts](#artifacts)
     1. [HF Models](#models)
     1. [Evaluation Datasets](#evaldata)
+1. [Model Usage Instructions](#modelusage)
+1. [Repository Contents](#repocontents)
 1. [Acknowledgements](#acks)
 1. [Citation](#citation)
 1. [TODOs](#todos)
@@ -24,7 +26,7 @@ The pre-print can be accessed here: https://arxiv.org/abs/2111.08366
 
 Models described in the paper are released as Hugging Face models:
 
-`otAspire`: 
+`otAspire`:
 
 - [`allenai/aspire-contextualsentence-multim-compsci`](https://huggingface.co/allenai/aspire-contextualsentence-multim-compsci)
 - [`allenai/aspire-contextualsentence-multim-biomed`](https://huggingface.co/allenai/aspire-contextualsentence-multim-biomed)
@@ -45,6 +47,60 @@ Models described in the paper are released as Hugging Face models:
 
 - [`allenai/aspire-sentence-embedder`](https://huggingface.co/allenai/aspire-sentence-embedder)
 
+#### Model Usage Instructions <a name="modelusage"></a>
+
+The `tsAspire` multi-vector model trained for single matches across documents can be used via the `transformers` library and some additional code to compute contextual sentence vectors as:
+
+```
+from examples.ex_aspire_consent import AspireConSent, prepare_abstracts
+
+# Initialize the tokenizer and model.
+hf_model_name = 'allenai/aspire-contextualsentence-singlem-compsci'
+aspire_tok = AutoTokenizer.from_pretrained(hf_model_name)
+aspire_mv_model = AspireConSent(hf_model_name)
+
+
+# Example input.
+ex_abstracts = [
+    {'TITLE': "Multi-Vector Models with Textual Guidance for Fine-Grained Scientific Document Similarity",
+     'ABSTRACT': ["We present a new scientific document similarity model based on matching fine-grained aspects of "
+                  "texts.",
+                  "To train our model, we exploit a naturally-occurring source of supervision: sentences in the "
+                  "full-text of papers that cite multiple papers together (co-citations)."]},
+    {'TITLE': "CSFCube -- A Test Collection of Computer Science Research Articles for Faceted Query by Example",
+     'ABSTRACT': ["Query by Example is a well-known information retrieval task in which a document is chosen by the "
+                  "user as the search query and the goal is to retrieve relevant documents from a large collection.",
+                  "However, a document often covers multiple aspects of a topic.",
+                  "To address this scenario we introduce the task of faceted Query by Example in which users can also"
+                  " specify a finer grained aspect in addition to the input query document. "]}
+]
+
+bert_batch, abs_lens, sent_token_idxs = prepare_abstracts(batch_abs=ex_abstracts,
+                                                          pt_lm_tokenizer=aspire_tok)
+clsreps, contextual_sent_reps = aspire_mv_model.forward(bert_batch=bert_batch,
+                                                        abs_lens=abs_lens,
+                                                        sent_tok_idxs=sent_token_idxs)
+```
+
+The `otAspire` multi-vector model trained for _multiple_ matches across documents can be used via the `transformers` library, some additional code to compute contextual sentence vectors and to make multiple matches using optimal transport. 
+
+View example usage and sample document alignments here: [`examples/demo-contextualsentence-multim.ipynb`](https://github.com/allenai/aspire/blob/main/examples/demo-contextualsentence-multim.ipynb)
+
+The `SPECTER-CoCite` bi-encoder model can be used via the `transformers` library as:
+
+```
+from transformers import AutoModel, AutoTokenizer
+aspire_bienc = AutoModel.from_pretrained('allenai/aspire-biencoder-compsci-spec')
+aspire_tok = AutoTokenizer.from_pretrained('allenai/aspire-biencoder-compsci-spec')
+title = "Multi-Vector Models with Textual Guidance for Fine-Grained Scientific Document Similarity"
+abstract = "We present a new scientific document similarity model based on matching fine-grained aspects of texts."
+d=[title + aspire_tok.sep_token + abstract]
+inputs = aspire_tok(d, padding=True, truncation=True, return_tensors="pt", max_length=512)
+result = aspire_bienc(**inputs)
+clsrep = result.last_hidden_state[:, 0, :]
+```
+
+However, note that the Hugging Face models don't have a set of additional scalar-mix parameters to compute a learned weighted sum of the representations from different layers of the transformer encoder. These parameters are important for performance in some datasets. Obtain these as follows: TODO.
 
 #### Evaluation Datasets <a name="evaldata"></a>
 
@@ -146,7 +202,7 @@ This work relies on: (1) Data from the [Semantic Scholar Open Research Corpus](h
 
 ### Citation <a name="citation"></a>
 
-Please cite the [ASPIRE paper](https://arxiv.org/pdf/2004.07180.pdf) as:  
+Please cite the [Aspire paper](https://arxiv.org/pdf/2004.07180.pdf) as:  
 
 ```bibtex
 @misc{mysore2021aspire,
