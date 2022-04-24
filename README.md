@@ -54,6 +54,7 @@ Models described in the paper are released as Hugging Face models:
 The `tsAspire` multi-vector model trained for single matches across documents can be used via the `transformers` library and some additional code to compute contextual sentence vectors as:
 
 ```
+from transformers import AutoTokenizer
 from examples.ex_aspire_consent import AspireConSent, prepare_abstracts
 
 # Initialize the tokenizer and model.
@@ -86,9 +87,9 @@ clsreps, contextual_sent_reps = aspire_mv_model.forward(bert_batch=bert_batch,
 
 ##### `otAspire`
 
-The `otAspire` multi-vector model trained for _multiple_ matches across documents can be used via the `transformers` library, some additional code to compute contextual sentence vectors and to make multiple matches using optimal transport. 
+The `otAspire` multi-vector model trained for _multiple_ matching across documents can be used via the `transformers` library, and some additional code to compute contextual sentence vectors and to make multiple matches using optimal transport. 
 
-View example usage and sample document alignments here: [`examples/demo-contextualsentence-multim.ipynb`](https://github.com/allenai/aspire/blob/main/examples/demo-contextualsentence-multim.ipynb)
+View example usage and sample document matches here: [`examples/demo-contextualsentence-multim.ipynb`](https://github.com/allenai/aspire/blob/main/examples/demo-contextualsentence-multim.ipynb)
 
 ##### `SPECTER-CoCite`
 
@@ -106,7 +107,46 @@ result = aspire_bienc(**inputs)
 clsrep = result.last_hidden_state[:, 0, :]
 ```
 
-However, note that the Hugging Face models don't have a set of additional scalar-mix parameters to compute a learned weighted sum of the representations from different layers of the transformer encoder. These parameters are important for performance in some datasets. Obtain these as follows: TODO.
+However, note that the Hugging Face models don't have a set of additional scalar-mix parameters to compute a learned weighted sum of the representations from different layers of the transformer encoder. These are used in our paper and are important for performance in some datasets. Obtain the model as follows:
+
+```
+wget -O aspire-biencoder-compsci-spec-full.zip <LINK>
+unzip aspire-biencoder-compsci-spec-full.zip
+```
+
+Now it may be used as:
+
+```
+import os, json, codecs, torch
+from transformers import AutoTokenizer
+from examples.ex_aspire_bienc import AspireBiEnc
+
+# Directory where zipped model was downloaded and unzipped.
+model_path = '<YOUR_DIRECTORY_HERE>'
+
+# Load hyperparameters from disk.
+with codecs.open(os.path.join(model_path, 'run_info.json'), 'r') as fp:
+    hparams = json.load(fp)
+    model_hparams = hparams['all_hparams']
+
+# Initialize the tokenizer and model.
+aspire_tok = AutoTokenizer.from_pretrained(model_hparams['base-pt-layer'])
+aspire_bienc = AspireBiEnc(model_hparams)
+
+# Load model parameters from disk.
+model_fname = os.path.join(model_path, 'model_cur_best.pt')
+aspire_bienc.load_state_dict(torch.load(model_fname))
+
+# Encode example input.
+title = "Multi-Vector Models with Textual Guidance for Fine-Grained Scientific Document Similarity"
+abstract = "We present a new scientific document similarity model based on matching fine-grained aspects of texts."
+d = [title + aspire_tok.sep_token + abstract]
+
+inputs = aspire_tok(d, padding=True, truncation=True, return_tensors="pt", max_length=512)
+clsrep = aspire_bienc.forward(inputs)
+
+```
+
 
 #### Evaluation Datasets <a name="evaldata"></a>
 
