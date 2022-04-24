@@ -9,7 +9,7 @@ Repository accompanying paper for modeling fine grained similarity between docum
 
 The pre-print can be accessed here: https://arxiv.org/abs/2111.08366
 
-### Table of contents
+### Contents
 1. [Artifacts](#artifacts)
     1. [HF Models](#models)
     1. [Evaluation Datasets](#evaldata)
@@ -116,7 +116,7 @@ unzip aspire-biencoder-compsci-spec-full.zip
 
 Now it may be used as:
 
-```python
+```python 
 import os, json, codecs, torch
 from transformers import AutoTokenizer
 from examples.ex_aspire_bienc import AspireBiEnc
