@@ -9,8 +9,59 @@ Repository accompanying paper for modeling fine grained similarity between docum
 
 The pre-print can be accessed here: https://arxiv.org/abs/2111.08366
 
+### Table of contents
+1. [Artifacts](#artifacts)
+    1. [HF Models](#models)
+    1. [Evaluation Datasets](#evaldata)
+1. [Acknowledgements](#acks)
+1. [Citation](#citation)
+1. [TODOs](#todos)
 
-### Repository Contents
+
+### Artifacts <a name="artifacts"></a>
+
+#### Models <a name="models"></a>
+
+Models described in the paper are released as Hugging Face models:
+
+`otAspire`: 
+
+- [`allenai/aspire-contextualsentence-multim-compsci`](https://huggingface.co/allenai/aspire-contextualsentence-multim-compsci)
+- [`allenai/aspire-contextualsentence-multim-biomed`](https://huggingface.co/allenai/aspire-contextualsentence-multim-biomed)
+
+`tsAspire`: 
+
+- [`allenai/aspire-contextualsentence-singlem-compsci`](https://huggingface.co/allenai/aspire-contextualsentence-singlem-compsci)
+- [`allenai/aspire-contextualsentence-singlem-biomed`](https://huggingface.co/allenai/aspire-contextualsentence-singlem-biomed)
+
+
+`SPECTER-CoCite`: 
+
+- [`allenai/aspire-biencoder-compsci-spec`](https://huggingface.co/allenai/aspire-biencoder-compsci-spec)
+- [`allenai/aspire-biencoder-biomed-scib`](https://huggingface.co/allenai/aspire-biencoder-biomed-scib)
+- [`allenai/aspire-biencoder-biomed-spec`](https://huggingface.co/allenai/aspire-biencoder-biomed-spec)
+
+`cosentbert`: 
+
+- [`allenai/aspire-sentence-embedder`](https://huggingface.co/allenai/aspire-sentence-embedder)
+
+
+#### Evaluation Datasets <a name="evaldata"></a>
+
+The paper uses the following evaluation datasets:
+
+- RELISH was created in [Brown et al. 2019](https://academic.oup.com/database/article/doi/10.1093/database/baz085/5608006?login=true). While I wasn't able to access the link in the publication. I was able to obtain a copy of the dataset from: [link](http://pubannotation.org/projects/RELISH-DB). Dataset splits are created in `pre_proc_relish.py`.
+
+- TRECCOVID presents an ad-hoc search dataset. The versions of the dataset used may be accessed here: [query topics](https://ir.nist.gov/covidSubmit/data/topics-rnd5.xml), [relevance annotations](https://ir.nist.gov/covidSubmit/data/qrels-covid_d5_j0.5-5.txt), and the metadata for papers is obtained from the [CORD-19](https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/historical_releases.html) dataset in the [2021-06-21](https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/2021-06-21/metadata.csv) release. The function `get_qbe_pools` in `pre_proc_treccovid.py`, converts the dataset in its original form to the reformulated form, TRECCOVID-RF, used in the paper. Dataset splits are created in `pre_proc_treccovid.py`.
+
+- SciDocs is obtained from: [link](https://github.com/allenai/scidocs). The dataset splits supplied alongside the original dataset are used as is.
+
+- CSFCube is obtained from: [link](https://github.com/iesl/CSFCube). The dataset splits supplied alongside the original dataset are used as is.
+
+Complete evaluation datasets used in the paper can be downloaded here: [`datasets/datasets.md`](https://github.com/allenai/aspire/blob/main/datasets/datasets.md)
+
+
+### Repository Contents <a name="repocontents"></a>
 
     ├── bin
     ├── config
@@ -63,14 +114,6 @@ The pre-print can be accessed here: https://arxiv.org/abs/2111.08366
 
 `src/pre_process/pre_proc_{relish/scidocs/treccovid}.py`: Pre-process the evaluation datasets (RELISH, TRECCOVID, and SciDocs) into a format consumed by trained models and evaluation scripts. CSFCube data format matches the assumed format. Details about each dataset are as follows:
 
-- RELISH was created in [Brown et al. 2019](https://academic.oup.com/database/article/doi/10.1093/database/baz085/5608006?login=true). While I wasn't able to access the link in the publication. I was able to obtain a copy of the dataset from: [link](http://pubannotation.org/projects/RELISH-DB). Dataset splits are created in `pre_proc_relish.py`.
-
-- TRECCOVID presents an ad-hoc search dataset. The versions of the dataset used may be accessed here: [query topics](https://ir.nist.gov/covidSubmit/data/topics-rnd5.xml), [relevance annotations](https://ir.nist.gov/covidSubmit/data/qrels-covid_d5_j0.5-5.txt), and the metadata for papers is obtained from the [CORD-19](https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/historical_releases.html) dataset in the [2021-06-21](https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/2021-06-21/metadata.csv) release. The function `get_qbe_pools` in `pre_proc_treccovid.py`, converts the dataset in its original form to the reformulated form, TRECCOVID-RF, used in the paper. Dataset splits are created in `pre_proc_treccovid.py`.
-
-- SciDocs is obtained from: [link](https://github.com/allenai/scidocs). The dataset splits supplied alongside the original dataset are used as is.
-
-- CSFCube is obtained from: [link](https://github.com/iesl/CSFCube). The dataset splits supplied alongside the original dataset are used as is.
-
 `src/pre_process/{pre_proc_buildreps.py/pp_gen_nearest.py}`: Contain code to generate rankings over the evaluation datasets for consumption with a trained model. Most of the results reported in the paper are generated with the `CachingTrainedScoringModel` class in `pp_gen_nearest.py`.
 
 `src/evaluation/ranking_eval.py`: Script for generating eval metrics.
@@ -96,30 +139,12 @@ The pre-print can be accessed here: https://arxiv.org/abs/2111.08366
 </div>
 
 
-### Artifacts 
+### Acknowledgements <a name="acks"></a>
 
-#### Models
-
-Models described in the paper will be released as Hugging Face models.
-
-`cosentbert`: [`allenai/aspire-sentence-embedder`](https://huggingface.co/allenai/aspire-sentence-embedder)
-
-`SPECTER-CoCite`: [`allenai/aspire-biencoder-compsci-spec`](https://huggingface.co/allenai/aspire-biencoder-compsci-spec), [`allenai/aspire-biencoder-biomed-scib`](https://huggingface.co/allenai/aspire-biencoder-biomed-scib), [`allenai/aspire-biencoder-biomed-spec`](https://huggingface.co/allenai/aspire-biencoder-biomed-spec)
-
-`tsAspire`: [`allenai/aspire-contextualsentence-singlem-compsci`](https://huggingface.co/allenai/aspire-contextualsentence-singlem-compsci), [`allenai/aspire-contextualsentence-singlem-biomed`](https://huggingface.co/allenai/aspire-contextualsentence-singlem-biomed)
-
-`otAspire`: [`allenai/aspire-contextualsentence-multim-compsci`](https://huggingface.co/allenai/aspire-contextualsentence-multim-compsci), [`allenai/aspire-contextualsentence-multim-biomed`](https://huggingface.co/allenai/aspire-contextualsentence-multim-biomed)
-
-#### Evaluation Datasets
-
-Complete evaluation datasets used in the paper can be downloaded here: [`datasets/datasets.md`](https://github.com/allenai/aspire/blob/main/datasets/datasets.md)
-
-
-### Acknowledgements
 This work relies on: (1) Data from the [Semantic Scholar Open Research Corpus](https://github.com/allenai/s2orc) (S2ORC) and the evaluation datasets RELISH (kindly shared by [Mariana Neves](https://mariananeves.github.io/)), TRECCOVID, SciDocs, and CSFCube linked above. (2) The pre-trained models of [SPECTER](https://github.com/allenai/specter). (3) The software packages: [GeomLoss](https://www.kernel-operations.io/geomloss/index.html) and [sentence-transformers](https://www.sbert.net/).
 
 
-### Citation
+### Citation <a name="citation"></a>
 
 Please cite the [ASPIRE paper](https://arxiv.org/pdf/2004.07180.pdf) as:  
 
@@ -135,8 +160,11 @@ Please cite the [ASPIRE paper](https://arxiv.org/pdf/2004.07180.pdf) as:
 ```
 
 
-### Todos
+### TODOs <a name="todos"></a>
 
 1. Release trained model parameters. (in-progress)
+    - Currently released models are _per-domain_ models for computer science and biomedical papers which were used in the paper. The coming months will also see release of domain independent models trained on data across different scientific domains.
 2. Release training training data.
+    - Co-citation data used to train the above model will also be released, this is co-citation pairs on the order of a few million pairs of papers.
 3. Training code usage instructions.
+    - This will be released for reproducibility.
