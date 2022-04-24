@@ -19,7 +19,7 @@ from torch.autograd import Variable
 from transformers import AutoModel, AutoTokenizer
 
 
-# Define the Aspire biencoder:
+# Define the Aspire contextual encoder:
 class AspireConSent(nn.Module):
     def __init__(self, hf_model_name):
         """
