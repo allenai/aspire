@@ -11,10 +11,9 @@ https://huggingface.co/allenai/aspire-biencoder-compsci-spec
 Requirements:
 - transformers version: 4.5.1
 - torch version: 1.8.1
+
+Code here is used here: https://github.com/allenai/aspire#specter-cocite
 """
-import os
-import codecs
-import json
 import torch
 from torch import nn as nn
 from torch.nn import functional
@@ -58,26 +57,3 @@ class AspireBiEnc(nn.Module):
         return cls_doc_reps
 
 
-# Directory where zipped model was downloaded and unzipped.
-model_path = '<YOUR_DIRECTORY_HERE>'
-
-# Load hyperparameters from disk.
-with codecs.open(os.path.join(model_path, 'run_info.json'), 'r') as fp:
-    hparams = json.load(fp)
-    model_hparams = hparams['all_hparams']
-
-# Initialize the tokenizer and model.
-aspire_tok = AutoTokenizer.from_pretrained(model_hparams['base-pt-layer'])
-aspire_bienc = AspireBiEnc(model_hparams)
-
-# Load model parameters from disk.
-model_fname = os.path.join(model_path, 'model_cur_best.pt')
-aspire_bienc.load_state_dict(torch.load(model_fname))
-
-# Encode example input.
-title = "Multi-Vector Models with Textual Guidance for Fine-Grained Scientific Document Similarity"
-abstract = "We present a new scientific document similarity model based on matching fine-grained aspects of texts."
-d = [title + aspire_tok.sep_token + abstract]
-
-inputs = aspire_tok(d, padding=True, truncation=True, return_tensors="pt", max_length=512)
-clsrep = aspire_bienc.forward(inputs)

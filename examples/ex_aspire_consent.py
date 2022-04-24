@@ -11,6 +11,8 @@ https://huggingface.co/allenai/aspire-contextualsentence-singlem-compsci
 Requirements:
 - transformers version: 4.5.1
 - torch version: 1.8.1
+
+Code here is used here: https://github.com/allenai/aspire#tsaspire
 """
 import numpy as np
 import torch
