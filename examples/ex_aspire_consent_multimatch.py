@@ -15,7 +15,7 @@ Requirements:
 - torch version: 1.8.1
 - geomloss version: 0.2.4
 
-Code here is used in the demo jupyter notebook: demo-contextualsentence-multim.ipynb
+Code here is used in the demo jupyter notebook: examples/demo-contextualsentence-multim.ipynb
 """
 import numpy as np
 import torch
