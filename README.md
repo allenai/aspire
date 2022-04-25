@@ -114,10 +114,14 @@ result = aspire_bienc(**inputs)
 clsrep = result.last_hidden_state[:, 0, :]
 ```
 
-However, note that the Hugging Face models don't have a set of additional scalar-mix parameters to compute a learned weighted sum of the representations from different layers of the transformer encoder. These are used in our paper and are important for performance in some datasets. Obtain the model as follows:
+However, note that the Hugging Face models don't have a set of additional scalar-mix parameters to compute a learned weighted sum of the representations from different layers of the transformer encoder. These are used in our paper and are important for performance in some datasets. Obtain the model zip files:
+
+- [`aspire-biencoder-biomed-scib-full`](https://ai2-s2-research.s3.us-west-2.amazonaws.com/aspire/aspire-biencoder-biomed-scib-full.zip)
+- [`aspire-biencoder-biomed-spec-full`](https://ai2-s2-research.s3.us-west-2.amazonaws.com/aspire/aspire-biencoder-biomed-spec-full.zip)
+- [`aspire-biencoder-compsci-spec-full`](https://ai2-s2-research.s3.us-west-2.amazonaws.com/aspire/aspire-biencoder-compsci-spec-full.zip)
 
 ```bash
-wget -O aspire-biencoder-compsci-spec-full.zip <LINK>
+wget -O aspire-biencoder-compsci-spec-full.zip https://ai2-s2-research.s3.us-west-2.amazonaws.com/aspire/aspire-biencoder-compsci-spec-full.zip
 unzip aspire-biencoder-compsci-spec-full.zip
 ```
 
@@ -129,7 +133,7 @@ from transformers import AutoTokenizer
 from examples.ex_aspire_bienc import AspireBiEnc
 
 # Directory where zipped model was downloaded and unzipped.
-model_path = '<YOUR_DIRECTORY_HERE>'
+model_path = './aspire-biencoder-compsci-spec-full'
 
 # Load hyperparameters from disk.
 with codecs.open(os.path.join(model_path, 'run_info.json'), 'r') as fp:
