@@ -9,6 +9,8 @@ Repository accompanying paper for modeling fine grained similarity between docum
 
 The pre-print can be accessed here: https://arxiv.org/abs/2111.08366
 
+**NEWS:** This work has been accepted to NAACL 2022, stay tuned for the camera-ready paper and additional artifacts.
+
 ### Contents
 1. [Artifacts](#artifacts)
     1. [HF Models](#models)
