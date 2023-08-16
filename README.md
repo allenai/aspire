@@ -221,7 +221,7 @@ Complete evaluation datasets used in the paper can be downloaded here: [`dataset
 
 `src/learning/`: Classes for implementing models, training, batching data, and a main script to train and save the model.
 
-`src/evaluation/`: Scripts to evaluate model performances on various evaluation datasets.
+`src/evaluation/`: Scripts to evaluate model performances on various evaluation datasets. See `src/evaluation/evaluate.md` for help.
 
 `config/models_config`: JSON files with hyper-parameters for models in the paper consumed by code in `src/learning/`. Since we evaluate on datasets in the Biomedical (RELISH, TRECCOVID-RF), Computer Science (CSFCube), and mixed domains (SciDocs) we train separate models for these domains, the sub-directories named `s2orcbiomed`, `s2orccompsci`, and `s2orcscidocs` contain config files for the models trained for each domain.
 
